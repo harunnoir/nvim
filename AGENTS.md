@@ -1,0 +1,21 @@
+# enough-nvim maintenance notes
+
+- Keep root `init.lua` limited to leaders and `require('config')`.
+- Keep feature switches and module order in `lua/modules/init.lua`.
+- Keep language tools in `lua/config/languages.lua` and consume them instead of duplicating them.
+- Keep every user-facing mapping in `lua/config/keymaps.lua`.
+- Put plugin setup in the nearest obvious module under `lua/modules/`.
+- Add a module only when it owns a clear feature area.
+- Reuse existing commands before installing anything.
+- Keep `bin/install.sh` limited to the editor and plugin runtime requirements; language scripts are explicit.
+- Never call `sudo` or a distro package manager from the installer.
+- Comment reasons and non-obvious constraints, not self-explanatory syntax.
+- Treat performance as a constraint: defer optional features, keep required startup plugins stable, and measure before adding complex lazy-loading.
+- Assume a Nerd Font; keep icons semantic, leave Mini Clue plain, and use Snacks defaults instead of a custom decoration layer.
+- Run `make check` before publishing an archive.
+- Split maximization uses `declancm/maximize.nvim`; keep its public mapping in `config/keymaps.lua` and its `MAX` state in Slimline.
+- Keep Flash in the navigation module; Mini Surround and Tree-sitter text objects stay in editing.
+- Gate REPL, debugger, and 42 mappings by the enabled language capabilities they require.
+- Prefer uv for Python-native command-line tools so Python support does not pull in npm.
+- Inside the Iron REPL, `Ctrl+\` hides the REPL; elsewhere it toggles the last Snacks terminal.
+- Keep Blink on tagged releases, require the Rust matcher, and compile only when the prebuilt download fails.
