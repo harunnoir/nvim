@@ -1,6 +1,7 @@
 local icons = require('config.icons')
 local languages = require('config.languages')
 local formatters = {}
+local linters = {}
 
 local filetypes = {
     python = { 'python' },
@@ -28,6 +29,11 @@ for name, profile in pairs(languages) do
     if type(profile) == 'table' and profile.enabled and profile.formatters then
         for _, filetype in ipairs(filetypes[name] or {}) do
             formatters[filetype] = profile.formatters
+        end
+    end
+    if type(profile) == 'table' and profile.enabled and profile.linters then
+        for _, filetype in ipairs(filetypes[name] or {}) do
+            linters[filetype] = profile.linters
         end
     end
 end
@@ -84,13 +90,50 @@ return {
         cmd = 'ConformInfo',
         opts = {
             default_format_opts = { lsp_format = 'fallback' },
+            formatters = {
+                autopep8 = { prepend_args = { '--max-line-length', '79' } },
+                c_formatter_42 = {
+                    command = 'c_formatter_42',
+                    args = {},
+                    stdin = true,
+                },
+                docformatter = {
+                    -- Stdin avoids docformatter's in-place exit code and lets
+                    -- Conform safely chain it after autopep8.
+                    args = {
+                        '--wrap-summaries',
+                        '79',
+                        '--wrap-descriptions',
+                        '79',
+                        '-',
+                    },
+                    stdin = true,
+                },
+            },
             format_on_save = function(bufnr)
-                if vim.b[bufnr].autoformat == false or vim.b[bufnr].learning_mode then
+                if vim.b[bufnr].autoformat ~= true or vim.b[bufnr].learning_mode then
                     return
                 end
                 return { timeout_ms = 1200, lsp_format = 'fallback' }
             end,
             formatters_by_ft = formatters,
         },
+    },
+    {
+        'mfussenegger/nvim-lint',
+        event = { 'BufReadPost', 'BufWritePost', 'InsertLeave' },
+        config = function()
+            local lint = require('lint')
+            lint.linters_by_ft = linters
+
+            vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufWritePost', 'InsertLeave' }, {
+                group = vim.api.nvim_create_augroup('enough_lint', { clear = true }),
+                callback = function(args)
+                    if not vim.b[args.buf].learning_mode then
+                        lint.try_lint(nil, { ignore_errors = true })
+                    end
+                end,
+            })
+        end,
     },
 }

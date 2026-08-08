@@ -29,7 +29,7 @@ local function state(bufnr)
             warnings = true,
             lsp = vim.b[bufnr].lsp_enabled ~= false,
             completion = vim.b[bufnr].completion ~= false,
-            format_on_save = vim.b[bufnr].autoformat ~= false,
+            format_on_save = vim.b[bufnr].autoformat == true,
             inlay_hints = vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }),
             learning = vim.b[bufnr].learning_mode == true,
         }
@@ -203,7 +203,7 @@ function M.toggle_format(bufnr)
     bufnr = current_buffer(bufnr)
     if blocked_by_learning(bufnr, 'format on save') then return end
 
-    local enabled = vim.b[bufnr].autoformat == false
+    local enabled = vim.b[bufnr].autoformat ~= true
     set_format(bufnr, enabled)
     notify('format on save', enabled)
 end
@@ -237,7 +237,7 @@ function M.toggle_learning(bufnr)
             warnings = current.warnings,
             lsp = vim.b[bufnr].lsp_enabled ~= false,
             completion = vim.b[bufnr].completion ~= false,
-            format_on_save = vim.b[bufnr].autoformat ~= false,
+            format_on_save = vim.b[bufnr].autoformat == true,
             inlay_hints = vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }),
         }
 
@@ -258,7 +258,7 @@ function M.toggle_learning(bufnr)
         set_virtual_text(bufnr, previous.virtual_text ~= false)
         set_warnings(bufnr, previous.warnings ~= false)
         set_completion(bufnr, previous.completion ~= false)
-        set_format(bufnr, previous.format_on_save ~= false)
+        set_format(bufnr, previous.format_on_save == true)
         set_inlay_hints(bufnr, previous.inlay_hints == true)
         set_lsp(bufnr, previous.lsp ~= false)
         set_diagnostics(bufnr, previous.diagnostics ~= false)

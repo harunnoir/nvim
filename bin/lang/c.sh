@@ -44,14 +44,13 @@ install_language() {
     pick cc gcc clang >/dev/null || die 'a C compiler is required for C support'
     if module_enabled coding; then
         ensure_mason clangd clangd
-        ensure_mason clang-format clang-format
+        ensure_uv_tool c_formatter_42 c-formatter-42
     fi
     if module_enabled debug; then
         ensure_mason codelldb codelldb
     fi
     if module_enabled school42; then
         ensure_uv_tool norminette norminette
-        ensure_uv_tool c_formatter_42 c-formatter-42
     fi
     install_parsers c make
 }

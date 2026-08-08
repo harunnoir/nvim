@@ -3,8 +3,12 @@
 local M = {
     python = {
         enabled = true,
-        lsp = { 'basedpyright', 'ruff' },
-        formatters = { 'ruff_organize_imports', 'ruff_format' },
+        lsp = {
+            'basedpyright',
+            -- 'ruff', -- Flake8 owns Python lint diagnostics.
+        },
+        linters = { 'flake8' },
+        formatters = { 'autopep8', 'docformatter' },
         debugger = 'debugpy',
         repl = { 'ptipython', 'ipython', 'ptpython', 'python' },
     },
@@ -12,14 +16,14 @@ local M = {
     c = {
         enabled = true,
         lsp = 'clangd',
-        formatters = { 'clang_format' },
+        formatters = { 'c_formatter_42' },
         debugger = 'codelldb',
     },
 
     cpp = {
         enabled = true,
         lsp = 'clangd',
-        formatters = { 'clang_format' },
+        formatters = { 'c_formatter_42' },
         debugger = 'codelldb',
     },
 

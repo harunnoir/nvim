@@ -21,6 +21,7 @@ keys for that prefix.
 <leader>d  debug
 <leader>f  find and files
 <leader>g  Git
+<leader>i  explicit AI assistance
 <leader>p  projects, tasks, sessions
 <leader>q  problems and lists
 <leader>r  REPL
@@ -89,6 +90,19 @@ Trouble view rather than introducing another permanent panel.
 
 ## Learning and assistance
 
+AI actions are manual and scoped. The edit action is available only from an
+active visual selection; 99 never receives a whole buffer from these mappings.
+
+```text
+Normal/Visual <leader>icc  toggle the CodeCompanion chat
+Visual <leader>ice         explain the selected code
+Visual <leader>i9v  ask 99 to edit the selected code
+Normal <leader>i9s  ask 99 to search and explain code locations
+Normal <leader>i9o  open the latest 99 result
+Normal <leader>i9m  select the 99 model
+Normal <leader>i9x  cancel all active 99 requests
+```
+
 ```text
 <leader>tm  learning mode (syntax colors stay enabled)
 <leader>td  diagnostics
@@ -96,7 +110,7 @@ Trouble view rather than introducing another permanent panel.
 <leader>tW  warnings
 <leader>tl  LSP
 <leader>tc  completion
-<leader>tf  format on save
+<leader>tf  format on save (off by default)
 <leader>th  inlay hints
 <leader>tw  line wrapping
 <leader>ts  spelling
@@ -142,4 +156,3 @@ project-aware uv command or global fallback.
 <leader>ru  send everything through the cursor
 <leader>ra  send file
 ```
-

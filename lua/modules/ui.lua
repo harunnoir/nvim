@@ -29,7 +29,7 @@ end
 local function formatter_status()
     local bufnr = vim.api.nvim_get_current_buf()
     if vim.bo[bufnr].buftype ~= ''
-        or vim.b[bufnr].autoformat == false
+        or vim.b[bufnr].autoformat ~= true
         or require('config.toggles').is_learning(bufnr)
     then
         return ''
@@ -59,23 +59,37 @@ end
 
 return {
     {
-        'harunnoir/limei.nvim',
+        dir = "/home/abait-el/projects/limei.nvim",
+        name = "limei.nvim",
         lazy = false,
         priority = 1000,
-        opts = {
-            transparent = false,
-            matching = { brackets = true, quotes = true, string_delimiters = true },
-            styles = {
-                comments = { italic = false },
-                keywords = { italic = false },
-                functions = { bold = false },
-            },
-        },
-        config = function(_, opts)
-            require('limei').setup(opts)
-            vim.cmd.colorscheme('limei')
+        config = function()
+            require("limei").setup({
+                styles = {
+                    keywords = { bold = true },
+                },
+            })
+            vim.cmd.colorscheme("limei")
         end,
     },
+    -- {
+    --     'harunnoir/limei.nvim',
+    --     lazy = false,
+    --     priority = 1000,
+    --     opts = {
+    --         transparent = false,
+    --         matching = { brackets = true, quotes = true, string_delimiters = true },
+    --         styles = {
+    --             comments = { italic = true },
+    --             keywords = { italic = false },
+    --             functions = { bold = false },
+    --         },
+    --     },
+    --     config = function(_, opts)
+    --         require('limei').setup(opts)
+    --         vim.cmd.colorscheme('limei')
+    --     end,
+    -- },
     {
         'folke/snacks.nvim',
         lazy = false,

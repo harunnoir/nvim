@@ -40,21 +40,7 @@ done
 
 if [[ $ready == 1 ]]; then
     XDG_CONFIG_HOME=$(dirname "$ROOT") NVIM_APPNAME="$app" "$NVIM" --headless -i NONE -n \
-        "+lua local i=require('config.icons'); assert(i.terminal and i.error and i.learning, 'icon table is incomplete')" \
-        "+lua assert(vim.fn.exists(':KeymapManual') == 2, 'KeymapManual command is missing')" \
-        "+lua assert(vim.fn.maparg(']t', 'n') ~= '', 'next TODO mapping is missing')" \
-        "+lua assert(vim.fn.maparg('<leader>qt', 'n') ~= '', 'TODO list mapping is missing')" \
-        "+lua assert(vim.fn.maparg('<leader>aa', 'n') ~= '', 'select-all mapping is missing')" \
-        "+lua assert(vim.fn.maparg('<leader>ay', 'n') ~= '', 'copy-all mapping is missing')" \
-        "+lua assert(vim.fn.maparg('<leader>ax', 'n') ~= '', 'cut-all mapping is missing')" \
-        "+lua assert(vim.fn.maparg('<leader>wm', 'n') ~= '', 'maximize mapping is missing')" \
-        "+lua assert(vim.fn.maparg('<leader>rr', 'n') ~= '', 'REPL restart mapping is missing')" \
-        "+lua assert(vim.fn.exists(':Maximize') == 2, 'Maximize command is missing')" \
-        "+lua assert(vim.fn.maparg('s', 'n', false, true).desc == 'Flash jump', 'Flash mapping is missing')" \
-        "+lua assert(vim.fn.maparg('ys', 'n') ~= '', 'surround add mapping is missing')" \
-        "+lua assert(vim.fn.maparg('ds', 'n') ~= '', 'surround delete mapping is missing')" \
-        "+lua assert(vim.fn.maparg('cs', 'n') ~= '', 'surround replace mapping is missing')" \
-        "+lua dofile(vim.fn.stdpath('config') .. '/tests/toggles.lua')" \
+        "+lua dofile(vim.fn.stdpath('config') .. '/tests/startup.lua')" \
         +qa
     XDG_CONFIG_HOME=$(dirname "$ROOT") NVIM_APPNAME="$app" "$NVIM" --headless -i NONE -n \
         --cmd "lua vim.g.enough_languages={python=false,c=false,cpp=false}" \

@@ -110,11 +110,7 @@ return {
                 group = vim.api.nvim_create_augroup('enough_repl_keys', { clear = true }),
                 pattern = 'iron',
                 callback = function(args)
-                    vim.keymap.set({ 'n', 't' }, '<C-\\>', '<cmd>IronHide<cr>', {
-                        buffer = args.buf,
-                        silent = true,
-                        desc = 'Hide Python REPL',
-                    })
+                    require('config.keymaps').repl(args.buf)
                 end,
             })
 

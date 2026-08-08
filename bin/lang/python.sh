@@ -73,7 +73,10 @@ install_language() {
 
     if module_enabled coding; then
         ensure_uv_tool basedpyright-langserver basedpyright
-        ensure_uv_tool ruff ruff
+        # ensure_uv_tool ruff ruff # Flake8 is the active Python linter.
+        ensure_uv_tool flake8 flake8
+        ensure_uv_tool autopep8 autopep8
+        ensure_uv_tool docformatter docformatter
     fi
     install_parsers python
 
@@ -102,7 +105,7 @@ Usage: ./bin/lang/python.sh [OPTION]
 Installs required Python editor tools, then optionally installs debugging and
 interactive REPL tools.
 
-  --minimal       install basedpyright, Ruff, and the Python parser only
+  --minimal       install basedpyright, Flake8, formatters, and the Python parser
   --all           also install debugpy, IPython, ptpython, and ptipython
   --help          show this help
 

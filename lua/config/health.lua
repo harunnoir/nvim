@@ -6,15 +6,17 @@ local languages = require('config.languages')
 local coding_tools = {
     python = {
         { 'basedpyright-langserver', true },
-        { 'ruff', true },
+        { 'flake8', true },
+        { 'autopep8', true },
+        { 'docformatter', true },
     },
     c = {
         { 'clangd', true },
-        { 'clang-format', true },
+        { 'c_formatter_42', true },
     },
     cpp = {
         { 'clangd', true },
-        { 'clang-format', true },
+        { 'c_formatter_42', true },
     },
     go = {
         { 'gopls', true },
@@ -91,6 +93,7 @@ function M.check()
         'editing',
         'navigation',
         'coding',
+        'ai',
         'terminal',
         'repl',
         'debug',
@@ -117,6 +120,9 @@ function M.check()
     end
     if modules.git then
         command('lazygit', true)
+    end
+    if modules.ai then
+        one_of('99 AI provider', { 'opencode', 'claude', 'cursor-agent', 'gemini' }, true)
     end
     if modules.editing then
         command('tree-sitter', true)

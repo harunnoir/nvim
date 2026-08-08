@@ -49,11 +49,7 @@ api.nvim_create_autocmd('FileType', {
     pattern = { 'checkhealth', 'help', 'lspinfo', 'qf', 'startuptime' },
     callback = function(args)
         vim.bo[args.buf].buflisted = false
-        vim.keymap.set('n', 'q', '<cmd>close<cr>', {
-            buffer = args.buf,
-            silent = true,
-            desc = 'Close window',
-        })
+        require('config.keymaps').close_with_q(args.buf)
     end,
 })
 
@@ -87,7 +83,7 @@ local filetypes = {
     lua = { 4, true, '120' },
     make = { 8, false, '100' },
     markdown = { 2, true, '100', true, true },
-    python = { 4, true, '88' },
+    python = { 4, true, '79' },
     rust = { 4, true, '100' },
     sh = { 4, true, '100' },
     toml = { 2, true, '100' },

@@ -247,6 +247,26 @@ function M.setup()
         end, opts('Format selection'))
     end
 
+    if modules.ai then
+        map({ 'n', 'v' }, '<leader>icc', '<cmd>CodeCompanionChat Toggle<cr>', opts('Toggle AI chat'))
+        map('v', '<leader>ice', ":<C-u>'<,'>CodeCompanion /explain<cr>", opts('Explain selected code'))
+        map('n', '<leader>i9s', function()
+            require('99').search()
+        end, opts('AI project search'))
+        map('v', '<leader>i9v', function()
+            require('99').visual()
+        end, opts('AI edit selection'))
+        map('n', '<leader>i9o', function()
+            require('99').open()
+        end, opts('Open AI result'))
+        map('n', '<leader>i9x', function()
+            require('99').stop_all_requests()
+        end, opts('Stop AI requests'))
+        map('n', '<leader>i9m', function()
+            require('99.extensions.telescope').select_model()
+        end, opts('Select AI model'))
+    end
+
     if modules.terminal then
         -- Terminal: <leader>x.
         map({ 'n', 't' }, '<C-\\>', '<cmd>TerminalToggle<cr>', opts('Toggle last terminal'))
@@ -398,6 +418,7 @@ function M.clues()
         d = debug_enabled and 'debug' or nil,
         f = modules.navigation and 'find/files' or nil,
         g = modules.git and 'git' or nil,
+        i = modules.ai and 'AI' or nil,
         p = modules.project and 'project/tasks' or nil,
         q = modules.navigation and 'problems/lists' or nil,
         r = repl_enabled and 'REPL' or nil,
@@ -416,7 +437,27 @@ function M.clues()
             }
         end
     end
+    if modules.ai then
+        result[#result + 1] = {
+            mode = 'n',
+            keys = '<Leader>ic',
+            desc = '+CodeCompanion',
+        }
+        result[#result + 1] = {
+            mode = 'n',
+            keys = '<Leader>i9',
+            desc = '+99',
+        }
+    end
     return result
+end
+
+function M.close_with_q(bufnr)
+    map('n', 'q', '<cmd>close<cr>', opts('Close window', { buffer = bufnr }))
+end
+
+function M.repl(bufnr)
+    map({ 'n', 't' }, '<C-\\>', '<cmd>IronHide<cr>', opts('Hide Python REPL', { buffer = bufnr }))
 end
 
 function M.lsp(bufnr)

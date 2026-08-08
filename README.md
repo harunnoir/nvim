@@ -22,6 +22,7 @@ ui          colorscheme, statusline, notifications
 editing     pairs, surrounds, Tree-sitter, text objects
 navigation  Flash, files, buffers, search, Oil, TODO comments, Trouble
 coding      Mason, completion, formatting, LSP-facing tools
+ai          explicit selection edits and project code search with 99
 terminal    Snacks terminal behavior and commands
 repl        Iron REPL integration
 debug       DAP and language adapters
@@ -97,6 +98,7 @@ not produce a maze of fragile loading events.
 <leader>d  debug
 <leader>f  find and files
 <leader>g  Git
+<leader>i  explicit AI assistance
 <leader>p  projects, tasks, sessions
 <leader>q  problems and lists
 <leader>r  REPL

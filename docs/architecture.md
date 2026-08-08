@@ -36,6 +36,7 @@ ui          colorscheme, statusline, notifications, window maximize
 editing     pairs, surrounds, Tree-sitter, text objects
 navigation  Flash, files, buffers, search, Oil, TODO comments, Trouble
 coding      Mason, completion, formatting, LSP-facing tools
+ai          explicit, selection-scoped AI editing and code search
 terminal    terminal creation and management
 repl        interactive code execution
 debug       DAP and language adapters

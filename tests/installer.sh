@@ -27,11 +27,18 @@ grep -Fq 'Language tools are installed separately' "$ROOT/bin/install.sh"
 
 # Python keeps required editor tools separate from optional debugger and REPL tools.
 grep -Fq 'ensure_uv_tool basedpyright-langserver basedpyright' "$ROOT/bin/lang/python.sh"
-grep -Fq 'ensure_uv_tool ruff ruff' "$ROOT/bin/lang/python.sh"
+grep -Fq '# ensure_uv_tool ruff ruff' "$ROOT/bin/lang/python.sh"
+grep -Fq 'ensure_uv_tool flake8 flake8' "$ROOT/bin/lang/python.sh"
+grep -Fq 'ensure_uv_tool autopep8 autopep8' "$ROOT/bin/lang/python.sh"
+grep -Fq 'ensure_uv_tool docformatter docformatter' "$ROOT/bin/lang/python.sh"
 grep -Fq "Install optional Python debugging support" "$ROOT/bin/lang/python.sh"
 grep -Fq "Install optional Python REPL tools" "$ROOT/bin/lang/python.sh"
 grep -Fq -- '--minimal' "$ROOT/bin/lang/python.sh"
 grep -Fq -- '--all' "$ROOT/bin/lang/python.sh"
+grep -Fq 'ensure_uv_tool c_formatter_42 c-formatter-42' "$ROOT/bin/lang/c.sh"
+grep -Fq 'ensure_uv_tool c_formatter_42 c-formatter-42' "$ROOT/bin/lang/cpp.sh"
+! grep -Fq 'ensure_mason clang-format clang-format' "$ROOT/bin/lang/c.sh"
+! grep -Fq 'ensure_mason clang-format clang-format' "$ROOT/bin/lang/cpp.sh"
 
 # Exercise Python minimal/all modes without installing anything.
 # shellcheck source=../bin/lang/python.sh
@@ -48,7 +55,10 @@ install_parsers() { calls+=("parser:$*"); }
 install_language minimal
 minimal=" ${calls[*]} "
 [[ $minimal == *' basedpyright-langserver:basedpyright '* ]]
-[[ $minimal == *' ruff:ruff '* ]]
+[[ $minimal == *' flake8:flake8 '* ]]
+[[ $minimal != *' ruff:ruff '* ]]
+[[ $minimal == *' autopep8:autopep8 '* ]]
+[[ $minimal == *' docformatter:docformatter '* ]]
 [[ $minimal == *' parser:python '* ]]
 [[ $minimal != *' debugpy-adapter:debugpy '* ]]
 [[ $minimal != *' ipython:ipython '* ]]
