@@ -12,6 +12,7 @@ local M = {
     git = true,
     project = true,
     school42 = true,
+    test = true,
 }
 
 local order = {
@@ -26,6 +27,7 @@ local order = {
     'git',
     'project',
     'school42',
+    'test',
 }
 
 -- Temporary sessions and tests may override switches before startup.
