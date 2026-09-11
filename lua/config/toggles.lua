@@ -3,6 +3,31 @@
 local M = {}
 local icons = require('config.icons')
 local states = {}
+local minimal = {
+    enabled = false,
+    windows = {},
+}
+
+local minimal_global_options = {
+    cmdheight = 0,
+    laststatus = 0,
+    ruler = false,
+    showcmd = false,
+    showtabline = 0,
+}
+
+local minimal_window_options = {
+    colorcolumn = '',
+    cursorcolumn = false,
+    cursorline = false,
+    foldcolumn = '0',
+    list = false,
+    number = false,
+    relativenumber = false,
+    signcolumn = 'no',
+    statuscolumn = '',
+    winbar = '',
+}
 
 local diagnostic_signs = {
     text = {
@@ -41,6 +66,70 @@ local function notify(name, enabled, level)
     local icon = enabled and icons.toggle_on or icons.toggle_off
     vim.notify(('%s %s: %s'):format(icon, name, enabled and 'on' or 'off'), level or vim.log.levels.INFO)
     vim.cmd.redrawstatus()
+end
+
+local function window_option(winid, name)
+    return vim.api.nvim_get_option_value(name, { scope = 'local', win = winid })
+end
+
+local function set_window_option(winid, name, value)
+    vim.api.nvim_set_option_value(name, value, { scope = 'local', win = winid })
+end
+
+local function read_window_options(winid)
+    local options = {}
+    for name in pairs(minimal_window_options) do
+        options[name] = window_option(winid, name)
+    end
+    return options
+end
+
+local function apply_minimal_window(winid, capture)
+    if not vim.api.nvim_win_is_valid(winid) then return end
+
+    if not minimal.windows[winid] then
+        -- New splits inherit the hidden options. Restore them to the interface
+        -- that was active when minimal mode started instead.
+        minimal.windows[winid] = capture and read_window_options(winid) or vim.deepcopy(minimal.default_window)
+    end
+
+    for name, value in pairs(minimal_window_options) do
+        set_window_option(winid, name, value)
+    end
+end
+
+local function set_minimal(enabled)
+    if minimal.enabled == enabled then return end
+
+    if enabled then
+        minimal.globals = {}
+        for name, value in pairs(minimal_global_options) do
+            minimal.globals[name] = vim.o[name]
+            vim.o[name] = value
+        end
+        minimal.enabled = true
+        minimal.default_window = read_window_options(vim.api.nvim_get_current_win())
+        for _, winid in ipairs(vim.api.nvim_list_wins()) do
+            apply_minimal_window(winid, true)
+        end
+    else
+        minimal.enabled = false
+        for name, value in pairs(minimal.globals or {}) do
+            vim.o[name] = value
+        end
+        for winid, options in pairs(minimal.windows) do
+            if vim.api.nvim_win_is_valid(winid) then
+                for name, value in pairs(options) do
+                    set_window_option(winid, name, value)
+                end
+            end
+        end
+        minimal.globals = nil
+        minimal.default_window = nil
+        minimal.windows = {}
+    end
+
+    notify('minimal mode', enabled)
 end
 
 local function blocked_by_learning(bufnr, feature)
@@ -155,6 +244,46 @@ function M.setup()
             states[args.buf] = nil
         end,
     })
+
+    vim.api.nvim_create_autocmd({ 'WinNew', 'BufWinEnter', 'FileType', 'TermOpen' }, {
+        group = vim.api.nvim_create_augroup('enough_minimal_mode', { clear = true }),
+        callback = function()
+            if minimal.enabled then
+                apply_minimal_window(vim.api.nvim_get_current_win())
+            end
+        end,
+    })
+
+    vim.api.nvim_create_autocmd('WinClosed', {
+        group = 'enough_minimal_mode',
+        callback = function(args)
+            minimal.windows[tonumber(args.match)] = nil
+        end,
+    })
+
+    vim.api.nvim_create_user_command('ModeMinimal', function()
+        set_minimal(true)
+    end, { desc = 'Enter distraction-free minimal mode' })
+    vim.api.nvim_create_user_command('ModeNormal', function()
+        set_minimal(false)
+    end, { desc = 'Restore the normal editor interface' })
+    vim.api.nvim_create_user_command('ModeToggle', M.toggle_minimal, { desc = 'Toggle minimal mode' })
+end
+
+function M.minimal()
+    set_minimal(true)
+end
+
+function M.normal()
+    set_minimal(false)
+end
+
+function M.toggle_minimal()
+    set_minimal(not minimal.enabled)
+end
+
+function M.is_minimal()
+    return minimal.enabled
 end
 
 function M.toggle_option(name, label)

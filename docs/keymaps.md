@@ -22,6 +22,7 @@ keys for that prefix.
 <leader>f  find and files
 <leader>g  Git
 <leader>i  explicit AI assistance
+<leader>m  editor modes
 <leader>p  projects, tasks, sessions
 <leader>q  problems and lists
 <leader>r  REPL
@@ -87,6 +88,20 @@ vim-surround-style operations. The two plugins no longer share the `s` prefix.
 
 `todo-comments.nvim` highlights TODO-style comments and uses the existing
 Trouble view rather than introducing another permanent panel.
+
+## Editor modes
+
+```text
+<leader>mm  enter minimal mode
+<leader>mn  return to normal mode
+<leader>mt  toggle minimal mode
+```
+
+Minimal mode keeps every split and all coding features active, but hides line
+numbers, signs, folds, color columns, whitespace markers, winbars, the tabline,
+the statusline, and command chrome. Returning to normal mode restores the exact
+global and per-window interface settings from before minimal mode. The same
+modes are available as `:ModeMinimal`, `:ModeNormal`, and `:ModeToggle`.
 
 ## Learning and assistance
 

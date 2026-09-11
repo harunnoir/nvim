@@ -118,6 +118,9 @@ function M.setup()
 
     -- Toggles remain available even when coding modules are disabled.
     local toggles = require('config.toggles')
+    map('n', '<leader>mm', toggles.minimal, opts('Enter minimal mode'))
+    map('n', '<leader>mn', toggles.normal, opts('Enter normal mode'))
+    map('n', '<leader>mt', toggles.toggle_minimal, opts('Toggle minimal mode'))
     map('n', '<leader>td', toggles.toggle_diagnostics, opts('Toggle diagnostics'))
     map('n', '<leader>tv', toggles.toggle_virtual_text, opts('Toggle diagnostic virtual text'))
     map('n', '<leader>tW', toggles.toggle_warnings, opts('Toggle warnings'))
@@ -419,6 +422,7 @@ function M.clues()
         f = modules.navigation and 'find/files' or nil,
         g = modules.git and 'git' or nil,
         i = modules.ai and 'AI' or nil,
+        m = 'modes',
         p = modules.project and 'project/tasks' or nil,
         q = modules.navigation and 'problems/lists' or nil,
         r = repl_enabled and 'REPL' or nil,

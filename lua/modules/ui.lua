@@ -72,6 +72,19 @@ return {
             vim.cmd.colorscheme("limei")
         end,
     },
+    {
+        "xero/miasma.nvim",
+        "rebelot/kanagawa.nvim",
+        "sainnhe/gruvbox-material",
+        "neanias/everforest-nvim",
+        "shaunsingh/nord.nvim",
+        "nyoom-engineering/oxocarbon.nvim",
+        "akinsho/horizon.nvim",
+        "ellisonleao/gruvbox.nvim",
+        "adigitoleo/vim-mellow",
+        "maxmx03/solarized.nvim",
+        "thallada/farout.nvim"
+    },
     -- {
     --     'harunnoir/limei.nvim',
     --     lazy = false,

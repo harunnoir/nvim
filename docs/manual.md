@@ -71,6 +71,14 @@ view without destroying the surrounding layout. Slimline displays `MAX` while
 the current tab is maximized. Use `<leader>wo` only when you deliberately want
 to close every other split.
 
+## Editor modes
+
+Use `<leader>mm` for a distraction-free code view that preserves all splits,
+editing features, and language tools. It hides editor chrome without maximizing
+or closing a window. Use `<leader>mn` to restore the exact normal interface, or
+`<leader>mt` to toggle between them. The command equivalents are `:ModeMinimal`,
+`:ModeNormal`, and `:ModeToggle`.
+
 ## Learning mode
 
 `<leader>tm` disables coding assistance for the current buffer while keeping

@@ -43,7 +43,12 @@ return {
         'Diogo-ss/42-header.nvim',
         enabled = school42_enabled,
         cmd = { 'Stdheader', 'Format42', 'Check42' },
-        opts = { default_map = false, auto_update = true },
+        opts = {
+            default_map = false,
+            auto_update = true,
+            user = "abait-el",
+            mail = "abait-el@student.1337.ma"
+        },
         config = function(_, opts)
             require('42header').setup(opts)
             vim.api.nvim_create_user_command('Format42', format42, { desc = 'Format current file to 42 norm' })
