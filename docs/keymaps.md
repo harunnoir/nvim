@@ -10,9 +10,14 @@ The authoritative mapping source is `lua/config/keymaps.lua`.
 :KeymapManual
 ```
 
-The manual reads the mappings currently active in Neovim, including global and current-buffer mappings. Raw `<Plug>` internals stay hidden.
-It is isolated in `config/keymap_manual.lua` and does not change or execute mappings. Pause after `<leader>` to let Mini Clue show only the available next
-keys for that prefix.
+The manual reads the mappings currently active in Neovim, including global and
+current-buffer mappings. Raw `<Plug>` internals stay hidden. It never creates,
+changes, or runs a mapping, and it only opens when you ask for it. Pause after
+`<leader>` to let Mini Clue show only the available next keys for that prefix.
+
+The `<leader>d`, `<leader>r`, and `<leader>4` groups exist only when an enabled
+language provides a debugger, a REPL, or the 42 norm. They are missing rather
+than broken when nothing does.
 
 ```text
 <leader>a  whole-buffer actions
@@ -27,9 +32,16 @@ keys for that prefix.
 <leader>q  problems and lists
 <leader>r  REPL
 <leader>t  toggles and learning mode
+<leader>u  undo tree
 <leader>w  windows and splits
 <leader>x  terminal
 <leader>4  42-school tools
+```
+
+## Undo history
+
+```text
+<leader>uu  open the undo tree
 ```
 
 ## Whole buffer
@@ -78,16 +90,50 @@ gsn          set surround search distance
 Flash keeps its fast single-key jump while Mini Surround uses the familiar
 vim-surround-style operations. The two plugins no longer share the `s` prefix.
 
-## TODO comments
+## Text objects
+
+```text
+af / if    around / inside a function
+ac / ic    around / inside a class
+]f / [f    next / previous function
+```
+
+These are Tree-sitter node selections, so they follow the syntax rather than
+indentation. They work in Visual mode as a selection and in Operator-pending mode
+as an operator: `dif`, `daf`, `cif`.
+
+## Move and restructure
+
+```text
+Alt+h/j/k/l  move the visual selection (Normal line moves stay on ]e/[e)
+gS           toggle a one-liner and an expanded argument list
+```
+
+mini.move only owns the visual-selection moves so Alt stays free for split
+resizing in Normal mode. `gS` works as an operator (`gS}`) and in Visual mode.
+
+## Git diff view
+
+```text
+<leader>gd  open the working-tree diff for the current files
+<leader>gD  history of the current file
+<leader>gv  close the diff view
+```
+
+diffview.nvim gives a side-by-side diff and a file-history browser; gitsigns
+still owns hunk staging, blame, and inline previews. `:diffget` and `:diffput`
+work inside either view to pull a change into the buffer or push one out.
+
+## Todo comments
 
 ```text
 ]t           next TODO/FIX/HACK comment
 [t           previous TODO/FIX/HACK comment
-<leader>qt  browse project TODO comments in Trouble
+<leader>qt  browse project TODO comments in a Snacks list
 ```
 
-`todo-comments.nvim` highlights TODO-style comments and uses the existing
-Trouble view rather than introducing another permanent panel.
+`todo-comments.nvim` highlights TODO-style comments; `<leader>qt` fills the
+quickfix list with them and opens the Snacks list view.
 
 ## Editor modes
 
@@ -109,8 +155,6 @@ AI actions are manual and scoped. The edit action is available only from an
 active visual selection; 99 never receives a whole buffer from these mappings.
 
 ```text
-Normal/Visual <leader>icc  toggle the CodeCompanion chat
-Visual <leader>ice         explain the selected code
 Visual <leader>i9v  ask 99 to edit the selected code
 Normal <leader>i9s  ask 99 to search and explain code locations
 Normal <leader>i9o  open the latest 99 result

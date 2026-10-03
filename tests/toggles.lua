@@ -1,5 +1,8 @@
 -- Verify Learning Mode is buffer-local, blocks contradictory toggles, and
 -- restores the exact assistance state that existed before it was enabled.
+--
+-- Toggles are called by name through `toggle(name)`, so this file also proves
+-- every name in `toggles.features` is one a caller can actually reach.
 local toggles = require('config.toggles')
 local primary = vim.api.nvim_create_buf(true, false)
 local secondary = vim.api.nvim_create_buf(true, false)
@@ -17,9 +20,9 @@ vim.b[secondary].lsp_enabled = true
 vim.diagnostic.enable(true, { bufnr = secondary })
 
 assert(toggles.diagnostic_severity(primary) == nil, 'warnings should start enabled')
-toggles.toggle_warnings(primary)
+toggles.toggle('warnings', primary)
 assert(toggles.diagnostic_severity(primary) == vim.diagnostic.severity.ERROR, 'warnings toggle should use errors only')
-toggles.toggle_warnings(primary)
+toggles.toggle('warnings', primary)
 assert(toggles.diagnostic_severity(primary) == nil, 'warnings should restore')
 
 toggles.toggle_learning(primary)
@@ -36,7 +39,7 @@ assert(vim.b[secondary].autoformat == true, 'formatting changed in another buffe
 assert(vim.diagnostic.is_enabled({ bufnr = secondary }), 'diagnostics changed in another buffer')
 
 -- Individual toggles must not claim to re-enable assistance under Learning Mode.
-toggles.toggle_completion(primary)
+toggles.toggle('completion', primary)
 assert(vim.b[primary].completion == false, 'completion bypassed learning mode')
 
 toggles.toggle_learning(primary)

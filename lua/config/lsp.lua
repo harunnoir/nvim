@@ -1,21 +1,38 @@
+--[[
+Language servers.
+
+One entry per server, and the entry carries the binary it needs. That single
+fact is why `config/health.lua` and `bin/lang/*.sh` do not keep their own list
+of executables: they read `M.servers`.
+
+A server is only enabled when its binary exists. That is what lets this config
+ship the same file whether or not a given language's tooling has been installed
+yet -- a missing binary degrades to "no completion for that language" instead
+of an error on every keystroke.
+
+The keys are the names used in `config/langs.lua`; the values are ordinary
+`vim.lsp.config` tables. See `:help vim.lsp.config`.
+]]
 local api = vim.api
-local languages = require('config.languages')
+local langs = require('config.langs')
 
 local M = {}
-local configured = false
-local enabled_servers = {}
 
-local servers = {
+M.servers = {
     basedpyright = {
         command = 'basedpyright-langserver',
         config = {
             cmd = { 'basedpyright-langserver', '--stdio' },
             filetypes = { 'python' },
-            root_markers = { 'pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt', 'Pipfile', '.git' },
+            root_markers = { 'pyproject.toml', 'uv.lock', 'setup.py', 'setup.cfg', 'requirements.txt', '.git' },
             settings = {
                 basedpyright = {
                     analysis = {
+                        -- Imports come from the type checker, so adding a missing
+                        -- import is one completion away instead of a guess.
                         autoImportCompletions = true,
+                        -- Whole-project checking on every keystroke is too slow to
+                        -- be useful while typing; open files still get checked.
                         diagnosticMode = 'openFilesOnly',
                         typeCheckingMode = 'standard',
                     },
@@ -23,14 +40,7 @@ local servers = {
             },
         },
     },
-    ruff = {
-        command = 'ruff',
-        config = {
-            cmd = { 'ruff', 'server' },
-            filetypes = { 'python' },
-            root_markers = { 'pyproject.toml', 'ruff.toml', '.ruff.toml', '.git' },
-        },
-    },
+
     clangd = {
         command = 'clangd',
         config = {
@@ -39,6 +49,7 @@ local servers = {
                 '--background-index',
                 '--clang-tidy',
                 '--completion-style=detailed',
+                -- Insert system headers the way IWYU wants, not just `<stdio.h>`.
                 '--header-insertion=iwyu',
             },
             filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
@@ -52,136 +63,14 @@ local servers = {
             },
         },
     },
-    gopls = {
-        command = 'gopls',
-        config = {
-            cmd = { 'gopls' },
-            filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
-            root_markers = { 'go.work', 'go.mod', '.git' },
-            settings = {
-                gopls = {
-                    analyses = { nilness = true, unusedparams = true, unusedwrite = true },
-                    completeUnimported = true,
-                    gofumpt = true,
-                    staticcheck = true,
-                    usePlaceholders = true,
-                },
-            },
-        },
-    },
-    rust_analyzer = {
-        command = 'rust-analyzer',
-        config = {
-            cmd = { 'rust-analyzer' },
-            filetypes = { 'rust' },
-            root_markers = { 'Cargo.toml', 'rust-project.json', '.git' },
-            settings = {
-                ['rust-analyzer'] = {
-                    cargo = { allFeatures = true },
-                    check = { command = 'clippy' },
-                    inlayHints = { bindingModeHints = { enable = true } },
-                },
-            },
-        },
-    },
-    lua_ls = {
-        command = 'lua-language-server',
-        config = {
-            cmd = { 'lua-language-server' },
-            filetypes = { 'lua' },
-            root_markers = { '.luarc.json', '.luarc.jsonc', '.stylua.toml', 'selene.toml', '.git' },
-            settings = {
-                Lua = {
-                    completion = { callSnippet = 'Replace' },
-                    diagnostics = { globals = { 'vim' } },
-                    hint = { enable = true },
-                    workspace = { checkThirdParty = false },
-                },
-            },
-        },
-    },
-    bashls = {
-        command = 'bash-language-server',
-        config = { cmd = { 'bash-language-server', 'start' }, filetypes = { 'bash', 'sh' } },
-    },
-    yamlls = {
-        command = 'yaml-language-server',
-        config = {
-            cmd = { 'yaml-language-server', '--stdio' },
-            filetypes = { 'yaml', 'yaml.docker-compose', 'yaml.gitlab' },
-            settings = { yaml = { keyOrdering = false } },
-        },
-    },
-    marksman = {
-        command = 'marksman',
-        config = {
-            cmd = { 'marksman', 'server' },
-            filetypes = { 'markdown', 'markdown.mdx' },
-            root_markers = { '.marksman.toml', '.git' },
-        },
-    },
-    ts_ls = {
-        command = 'typescript-language-server',
-        config = {
-            cmd = { 'typescript-language-server', '--stdio' },
-            filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
-            root_markers = { 'tsconfig.json', 'jsconfig.json', 'package.json', '.git' },
-        },
-    },
-    eslint = {
-        command = 'vscode-eslint-language-server',
-        config = {
-            cmd = { 'vscode-eslint-language-server', '--stdio' },
-            filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte' },
-            root_markers = {
-                'eslint.config.js',
-                'eslint.config.mjs',
-                '.eslintrc',
-                '.eslintrc.json',
-                'package.json',
-                '.git',
-            },
-        },
-    },
-    html = {
-        command = 'vscode-html-language-server',
-        config = { cmd = { 'vscode-html-language-server', '--stdio' }, filetypes = { 'html', 'templ' } },
-    },
-    cssls = {
-        command = 'vscode-css-language-server',
-        config = { cmd = { 'vscode-css-language-server', '--stdio' }, filetypes = { 'css', 'scss', 'less' } },
-    },
-    jsonls = {
-        command = 'vscode-json-language-server',
-        config = { cmd = { 'vscode-json-language-server', '--stdio' }, filetypes = { 'json', 'jsonc' } },
-    },
 }
 
-local function names(value)
-    if type(value) == 'string' then
-        return { value }
-    end
-    return type(value) == 'table' and value or {}
-end
-
-local function requested_servers()
-    local requested = {}
-    for _, language in pairs(languages) do
-        if type(language) == 'table' and language.enabled then
-            for _, name in ipairs(names(language.lsp)) do
-                requested[name] = true
-            end
-        end
-    end
-    return requested
-end
+local enabled = {}
 
 function M.setup()
-    if configured then
-        return
-    end
-    configured = true
-
+    -- Neovim does not advertise everything the LSP spec allows. Blink adds the
+    -- completion-specific parts, so give servers its capabilities when it is
+    -- available and the plain ones otherwise.
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     local ok, blink = pcall(require, 'blink.cmp')
     if ok then
@@ -189,18 +78,21 @@ function M.setup()
     end
     vim.lsp.config('*', { capabilities = capabilities, root_markers = { '.git' } })
 
-    for name in pairs(requested_servers()) do
-        local server = servers[name]
+    for name in pairs(langs.servers()) do
+        local server = M.servers[name]
         if server and vim.fn.executable(server.command) == 1 then
             vim.lsp.config(name, server.config)
             vim.lsp.enable(name)
-            enabled_servers[#enabled_servers + 1] = name
+            enabled[#enabled + 1] = name
         end
     end
 
     api.nvim_create_autocmd('LspAttach', {
         group = api.nvim_create_augroup('enough_lsp_attach', { clear = true }),
+        desc = 'Map LSP actions and honour assistance toggles',
         callback = function(event)
+            -- A buffer that asked for no help gets no keymaps and loses the
+            -- client. Replaying `FileType` re-runs this when help comes back.
             if vim.b[event.buf].lsp_enabled == false or vim.b[event.buf].learning_mode == true then
                 vim.schedule(function()
                     if api.nvim_buf_is_valid(event.buf) then
@@ -214,17 +106,23 @@ function M.setup()
     })
 end
 
+---Stop a buffer's clients without forgetting that it wanted them back.
+---`_uninitialized` matters: a client that is still starting is not in
+---`get_clients` yet, and without it a toggle during startup would detach nothing
+---and the client would attach a moment later anyway.
 function M.detach(bufnr)
-    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr, _uninitialized = true })) do
         pcall(vim.lsp.buf_detach_client, bufnr, client.id)
     end
 end
 
+---Ask Neovim to consider attaching again.
+---Neovim's own auto-activation keys off `FileType`, so replaying it is the
+---supported way to re-evaluate one buffer.
 function M.reattach(bufnr)
     if not api.nvim_buf_is_valid(bufnr) or vim.b[bufnr].lsp_enabled == false then
         return
     end
-    -- Replaying FileType asks Neovim's built-in LSP auto-activation to re-evaluate this buffer.
     vim.schedule(function()
         if api.nvim_buf_is_valid(bufnr) and vim.b[bufnr].lsp_enabled ~= false then
             api.nvim_exec_autocmds('FileType', { buffer = bufnr, modeline = false })
@@ -232,8 +130,9 @@ function M.reattach(bufnr)
     end)
 end
 
+---The servers that actually started, for `:ConfigHealth`.
 function M.enabled_servers()
-    return vim.deepcopy(enabled_servers)
+    return vim.deepcopy(enabled)
 end
 
 return M

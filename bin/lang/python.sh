@@ -71,26 +71,20 @@ install_language() {
         hash -r
     fi
 
-    if module_enabled coding; then
-        ensure_uv_tool basedpyright-langserver basedpyright
-        # ensure_uv_tool ruff ruff # Flake8 is the active Python linter.
-        ensure_uv_tool flake8 flake8
-        ensure_uv_tool autopep8 autopep8
-        ensure_uv_tool docformatter docformatter
-    fi
+    ensure_uv_tool basedpyright-langserver basedpyright
+    # ensure_uv_tool ruff ruff # Flake8 is the active Python linter.
+    ensure_uv_tool flake8 flake8
+    ensure_uv_tool autopep8 autopep8
+    ensure_uv_tool docformatter docformatter
     install_parsers python
 
-    if module_enabled debug; then
-        if [[ $optional_mode == all ]] || { [[ $optional_mode == prompt ]] && confirm 'Install optional Python debugging support (debugpy)?'; }; then
-            ensure_uv_tool debugpy-adapter debugpy
-        fi
+    if [[ $optional_mode == all ]] || { [[ $optional_mode == prompt ]] && confirm 'Install optional Python debugging support (debugpy)?'; }; then
+        ensure_uv_tool debugpy-adapter debugpy
     fi
 
-    if module_enabled repl; then
-        if [[ $optional_mode == all ]] || { [[ $optional_mode == prompt ]] && confirm 'Install optional Python REPL tools (IPython, ptpython, ptipython)?'; }; then
-            ensure_uv_tool ipython ipython
-            ensure_ptpython
-        fi
+    if [[ $optional_mode == all ]] || { [[ $optional_mode == prompt ]] && confirm 'Install optional Python REPL tools (IPython, ptpython, ptipython)?'; }; then
+        ensure_uv_tool ipython ipython
+        ensure_ptpython
     fi
 
     if [[ $optional_mode == prompt && ! -t 0 ]]; then

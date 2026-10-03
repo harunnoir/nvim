@@ -11,13 +11,9 @@ install_language() {
     language_bootstrap
     info 'Installing C++ tools'
     pick c++ g++ clang++ >/dev/null || die 'a C++ compiler is required for C++ support'
-    if module_enabled coding; then
-        ensure_mason clangd clangd
-        ensure_uv_tool c_formatter_42 c-formatter-42
-    fi
-    if module_enabled debug; then
-        ensure_mason codelldb codelldb
-    fi
+    ensure_mason clangd clangd
+    ensure_uv_tool c_formatter_42 c-formatter-42
+    ensure_mason codelldb codelldb
     install_parsers cpp
 }
 

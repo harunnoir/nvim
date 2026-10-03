@@ -1,153 +1,146 @@
-# enough-nvim
+# nvim
 
 A practical Neovim configuration for Python, C/C++, and 42-school work. It is
-small enough to understand, modular enough to extend, and deliberately avoids
-turning personal dotfiles into an enterprise framework.
+small enough to read in one sitting: two directories, one switch, and no layer
+of machinery deciding what is allowed to exist.
+
+## Quick Start
+
+```sh
+# 1. Install core editor (Neovim, plugins, runtime deps)
+./bin/install.sh
+
+# 2. Install language tooling (run only what you need)
+./bin/lang/python.sh    # basedpyright, flake8, autopep8, docformatter (+ optional debugpy, IPython)
+./bin/lang/c.sh         # clangd, codelldb, c_formatter_42, norminette
+./bin/lang/cpp.sh       # clangd, codelldb (shares C tooling)
+
+# 3. Verify everything works
+nvim --headless +ConfigHealth +qa
+```
 
 ## Layout
 
-```text
-init.lua
-lua/config/        shared editor behavior and on-demand keymap manual
-lua/modules/       one file per obvious feature
-bin/install.sh     user-local installer with small in-file helpers
-bin/lang/          standalone language installers
-tests/             small regression checks with comments explaining their value
+```
+init.lua                 → leaders, then require('config')
+lua/config/              → shared behavior (not plugins)
+  ├── init.lua           → startup orchestration
+  ├── options.lua        → editor options
+  ├── autocmds.lua       → automatic behavior & filetype options
+  ├── diagnostics.lua    → diagnostic display configuration
+  ├── assistance.lua     → per-buffer assistance toggles
+  ├── learning.lua       → learning mode (disables all assistance)
+  ├── minimal.lua        → minimal mode (hides UI, keeps features)
+  ├── keymaps/           → all user-facing mappings
+  │   ├── init.lua       → registry & manual
+  │   ├── general.lua    → non-leader mappings
+  │   ├── leader-*.lua   → one file per <leader> prefix
+  │   └── buffer.lua     → buffer-local (LSP, gitsigns, REPL)
+  ├── lsp.lua            → LSP server config & attach logic
+  ├── lazy.lua           → lazy.nvim bootstrap
+  ├── langs.lua          → THE switch: enabled languages & tools
+  ├── health.lua         → health checks (derived from langs)
+  └── icons.lua          → semantic icons only
+lua/plugins/             → plugin specs (one file per feature area)
+  ├── ui.lua             → colorscheme, statusline, maximize, cmdline
+  ├── snacks.lua         → shared primitives (picker, terminal, git, notify)
+  ├── coding.lua         → Mason, Blink, conform, nvim-lint, fidget, illuminate
+  ├── editing.lua        → mini.nvim, treesitter, textobjects, comments, markdown, undotree
+  ├── navigation.lua     → Oil, Flash, todo-comments, grug-far
+  ├── git.lua            → gitsigns, diffview
+  ├── project.lua        → overseer, persistence
+  ├── terminal.lua       → terminal workflow & last-terminal
+  ├── ai.lua             → 99 (explicit AI)
+  ├── repl.lua           → Iron REPL
+  ├── debug.lua          → nvim-dap + adapters
+  └── school42.lua       → 42-header, norminette
+bin/
+  ├── install.sh         → core editor + plugin runtime deps
+  ├── mason_install.lua  → Mason package installer
+  └── lang/              → one installer per language
+tests/                   → regression tests
+docs/                    → documentation
 ```
 
-Modules are straightforward:
+## The One Switch: `lua/config/langs.lua`
 
-```text
-ui          colorscheme, statusline, notifications
-editing     pairs, surrounds, Tree-sitter, text objects
-navigation  Flash, files, buffers, search, Oil, TODO comments, Trouble
-coding      Mason, completion, formatting, LSP-facing tools
-ai          explicit selection edits and project code search with 99
-terminal    Snacks terminal behavior and commands
-repl        Iron REPL integration
-debug       DAP and language adapters
-git         Gitsigns and LazyGit
-project     projects, tasks, and sessions
-school42    header, Norminette, and c_formatter_42
-```
+This is the **only** configuration switch in the entire setup. Each profile declares
+a language's LSP server, formatters, linters, debugger, and REPL chain. Everything
+else derives from it:
 
-## Languages
+| Consumer | Reads from profile |
+|----------|-------------------|
+| `config/lsp.lua` | `profile.lsp` — starts server if binary exists |
+| `plugins/coding.lua` | `profile.formatters`, `profile.linters` |
+| `plugins/debug.lua` | `profile.debugger` |
+| `plugins/repl.lua` | `profile.repl` |
+| `plugins/school42.lua` | `profile.norm` |
+| `config/keymaps/` | whether features exist at all |
+| `config/health.lua` | all of the above — reports what's missing |
+| `bin/lang/<name>.sh` | same tools, installed explicitly |
 
-`lua/config/languages.lua` is the single readable description of enabled
-languages and their LSP, formatter, debugger, and REPL tools. Python,
-C, and C++ are enabled by default.
-
-## Install
+**To change what's enabled:** edit `M.enabled` in `langs.lua`.
+**To try a language for one session without editing:**
 
 ```sh
-./bin/install.sh
+nvim --cmd "lua vim.g.enough_languages={python=false,c=false,cpp=false}"
 ```
 
-The core installer reuses existing commands and installs only Neovim, plugins,
-and plugin runtime requirements. It never invokes `sudo` or a distro package
-manager. Language tools are explicit, separate steps:
+**Adding a language = 2 edits:**
+1. Profile in `langs.lua` + line in `M.enabled`
+2. Script in `bin/lang/<name>.sh`
 
-```sh
-./bin/install.sh
-./bin/lang/python.sh      # asks about optional debug and REPL tools
-./bin/lang/c.sh
-./bin/lang/cpp.sh
+## Editor Modes
+
+| Mode | Key | Command | What it does |
+|------|-----|---------|--------------|
+| **Minimal** | `<leader>mm` / `<leader>mt` | `:ModeMinimal` / `:ModeToggle` | Hides statusline, numbers, signs, folds, colorcolumn, whitespace — keeps all features |
+| **Normal** | `<leader>mn` | `:ModeNormal` | Restores exact previous interface |
+| **Learning** | `<leader>ml` / `<leader>tm` | `:ModeLearnToggle` | Disables diagnostics, LSP, completion, format-on-save, inlay hints — keeps syntax — restores exact prior state |
+
+## Key Groups
+
+```
+<leader>a   whole buffer          <leader>q   problems & lists
+<leader>b   buffers               <leader>r   REPL
+<leader>c   code                  <leader>t   toggles & learning
+<leader>d   debug                 <leader>u   undo tree
+<leader>f   find & files          <leader>w   windows
+<leader>g   git                   <leader>x   terminal
+<leader>i   AI (99)               <leader>4   42-school
+<leader>m   editor modes          s / S     Flash jump / select
+<leader>p   projects & sessions   ys/ds/cs  surround add/delete/replace
 ```
 
-Python modes:
-
-```sh
-./bin/lang/python.sh --minimal
-./bin/lang/python.sh --all
-```
-
-Checks remain on the core installer:
-
-```sh
-./bin/install.sh --check
-./bin/install.sh --test
-```
-
-## Icons
-
-The configuration assumes a Nerd Font. `mini.icons` provides file and LSP-kind
-glyphs; custom icons are limited to diagnostics, state indicators, terminal/REPL
-titles, TODO markers, and debugger signs. Snacks and Mini Clue keep their normal
-labels instead of carrying a separate decoration layer.
+**Discover keys:** `<leader>?` or `:KeymapManual` (searchable picker)
+**Hint next keys:** Pause after `<leader>` (Mini Clue)
 
 ## Performance
 
-Performance is treated as a constraint:
+- **Startup:** ~30ms (measured with `nvim --headless +qa`)
+- **Eager plugins (correctness requires it):** blink.cmp, nvim-treesitter, snacks.nvim, slimline.nvim, mason.nvim
+- **Lazy/`VeryLazy` everything else**
+- **Blink Rust matcher:** Prebuilt from tagged releases; Cargo compile only as fallback
+- **No update checks, no config-change notifications**
+- **Netrw & gzip disabled** (Oil replaces netrw)
 
-- Blink requires its Rust fuzzy matcher. Tagged releases download a prebuilt library; the installer compiles it with Cargo only if that download fails.
-- Plugins stay lazy unless startup loading is required for correct behavior.
-- Tree-sitter and Snacks remain startup-loaded because their official setup expects it.
-- Smooth Snacks scrolling is disabled; `bigfile` and `quickfile` remain enabled.
-- Plugin update checks and config-change notifications stay off.
-- Netrw alone is disabled because Oil replaces it as the file explorer.
+Profile with `:Lazy profile` — optimize from measurement, not folklore.
 
-Use `:Lazy profile` when a real slowdown appears; optimization should follow evidence,
-not produce a maze of fragile loading events.
+## Icons
 
-## Main key groups
+Assumes a Nerd Font. The config owns only semantic icons (diagnostics, state, window
+titles, TODO markers, debugger signs). File/LSP-kind glyphs come from `mini.icons`.
+Snacks and Mini Clue use their defaults — no custom decoration layer.
 
-```text
-<leader>a  whole-buffer actions
-<leader>b  buffers
-<leader>c  code
-<leader>d  debug
-<leader>f  find and files
-<leader>g  Git
-<leader>i  explicit AI assistance
-<leader>p  projects, tasks, sessions
-<leader>q  problems and lists
-<leader>r  REPL
-<leader>t  toggles and learning mode
-<leader>w  windows
-<leader>x  terminal
-<leader>4  42-school tools
+## Documentation
 
-s / S       Flash jump and Tree-sitter selection
-ys / ds / cs add, delete, and replace surrounds
-```
+| File | Purpose |
+|------|---------|
+| `docs/ARCHITECTURE.md` | Architecture principles, module structure, invariants |
+| `docs/MANUAL.md` | Complete user manual |
+| `docs/EXTENDING.md` | How to add languages, plugins, tools |
+| `docs/PERFORMANCE.md` | Profiling, optimization guide |
+| `docs/KEYMAPS.md` | Complete keymap reference |
+| `docs/TOOLCHAINS.md` | Installer details |
 
-Window management includes a reversible split zoom:
-
-```text
-<leader>wm  maximize or restore the current split
-```
-
-Slimline shows an icon with `MAX` while a split is maximized. The existing
-focus, resize, move, equalize, and close mappings remain unchanged.
-
-Whole-buffer shortcuts are deliberately small:
-
-```text
-<leader>aa  select all
-<leader>ay  copy all
-<leader>ax  cut all
-```
-
-Discover active mappings at runtime:
-
-```text
-<leader>?   searchable keymap manual
-<leader>fk  searchable keymap manual
-:KeymapManual
-```
-
-Pause after `<leader>` to use Mini Clue for the current key sequence. The manual
-is read-only, opens only when requested, and does not create, alter, or execute mappings.
-
-TODO comments are highlighted automatically. Use `]t` / `[t` to move between
-comments and `<leader>qt` to browse project TODOs in Trouble.
-
-Learning mode (`<leader>tm`) disables coding assistance in the current buffer
-while keeping syntax colors, then restores the exact previous assistance state
-when toggled off. Slimline hides disabled diagnostics and formatters instead of
-reporting tools that will not actually run.
-
-The Python REPL prefers the active virtual environment, then the project's `.venv`,
-then a project-aware `uv run`, and finally the configured global fallbacks.
-
-Run `:ConfigHealth` after installation. More detail lives under `docs/`.
+Run `:ConfigManual` inside Neovim to open `docs/MANUAL.md`.

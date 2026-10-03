@@ -37,21 +37,15 @@ ensure_uv_tool() {
     has "$command" || die "$package did not provide $command"
 }
 
-# C language tools plus 42-school commands when that module is enabled.
+# C language tools, plus the 42-school commands clangd cannot replace.
 install_language() {
     language_bootstrap
     info 'Installing C tools'
     pick cc gcc clang >/dev/null || die 'a C compiler is required for C support'
-    if module_enabled coding; then
-        ensure_mason clangd clangd
-        ensure_uv_tool c_formatter_42 c-formatter-42
-    fi
-    if module_enabled debug; then
-        ensure_mason codelldb codelldb
-    fi
-    if module_enabled school42; then
-        ensure_uv_tool norminette norminette
-    fi
+    ensure_mason clangd clangd
+    ensure_uv_tool c_formatter_42 c-formatter-42
+    ensure_mason codelldb codelldb
+    ensure_uv_tool norminette norminette
     install_parsers c make
 }
 

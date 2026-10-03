@@ -18,10 +18,10 @@ The core installer checks or installs:
 Neovim 0.12+
 Git
 curl or wget
-tar, gzip, GNU tar, and unzip when required
+tar, gzip, GNU tar, and unzip
 ripgrep and fd for navigation
 Tree-sitter CLI plus an existing C compiler
-Lazygit when Git integration is enabled
+Lazygit
 Blink's Rust fuzzy matcher
 ```
 
@@ -39,8 +39,10 @@ Run only the profiles you use:
 ./bin/lang/cpp.sh
 ```
 
-The Python profile always installs the configured LSP and formatter tools. It asks
-before installing optional debugpy and interactive REPL tools. For automation, use:
+Every language script installs the tools named in that language's profile in
+`lua/config/langs.lua`, so the script and the editor cannot disagree about what a
+language needs. The Python script asks before installing optional debugpy and
+interactive REPL tools. For automation, use:
 
 ```sh
 ./bin/lang/python.sh --minimal

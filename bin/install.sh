@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-MODULES_FILE=${ENOUGH_MODULES_FILE:-"$ROOT/lua/modules/init.lua"}
 LOCAL_BIN=${XDG_BIN_HOME:-"$HOME/.local/bin"}
 DATA_HOME=${XDG_DATA_HOME:-"$HOME/.local/share"}
 APP_NAME=${NVIM_APPNAME:-$(basename "$ROOT")}
@@ -29,10 +28,6 @@ pick() {
         fi
     done
     return 1
-}
-
-module_enabled() {
-    grep -Eq "^[[:space:]]*$1[[:space:]]*=[[:space:]]*true[[:space:]]*,?" "$MODULES_FILE"
 }
 
 version_ge() {
@@ -72,7 +67,7 @@ install_neovim() {
     need tar
     tmp=$(mktemp -d)
     asset="nvim-linux-$arch"
-    destination="$DATA_HOME/enough-nvim/neovim/$NVIM_VERSION"
+    destination="$DATA_HOME/nvim/neovim/$NVIM_VERSION"
     info "Installing Neovim $NVIM_VERSION in $destination"
     download "https://github.com/neovim/neovim-releases/releases/download/v$NVIM_VERSION/$asset.tar.gz" "$tmp/nvim.tar.gz"
     tar -xzf "$tmp/nvim.tar.gz" -C "$tmp"
@@ -96,11 +91,9 @@ check_bootstrap() {
     pick curl wget >/dev/null || die 'curl or wget is required'
     need tar
     need gzip
-    if module_enabled navigation || module_enabled editing || module_enabled coding \
-        || module_enabled debug || module_enabled git; then
-        need unzip
-        tar --version 2>/dev/null | grep -q 'GNU tar' || die 'Mason requires GNU tar'
-    fi
+    # Mason unzips its own releases, and the Blink matcher build wants GNU tar.
+    need unzip
+    tar --version 2>/dev/null | grep -q 'GNU tar' || die 'Mason requires GNU tar'
 }
 
 language_bootstrap() {
@@ -114,8 +107,6 @@ sync_plugins() {
 }
 
 ensure_blink_rust() {
-    module_enabled coding || return
-
     local plugin_dir="$DATA_HOME/$APP_NAME/lazy/blink.cmp"
     local release_dir="$plugin_dir/target/release"
     local library
@@ -140,8 +131,7 @@ ensure_blink_rust() {
 ensure_mason_ready() {
     [[ $MASON_READY == 1 ]] && return
     [[ -d "$DATA_HOME/$APP_NAME/lazy/mason.nvim" ]] || sync_plugins
-    [[ -d "$DATA_HOME/$APP_NAME/lazy/mason.nvim" ]] \
-        || die 'Mason is unavailable; enable the coding or debug module'
+    [[ -d "$DATA_HOME/$APP_NAME/lazy/mason.nvim" ]] || die 'Mason is unavailable; run the installer again'
     MASON_READY=1
 }
 
@@ -171,7 +161,6 @@ ensure_mason() {
 }
 
 install_parsers() {
-    module_enabled editing || return
     local parser table='{'
     for parser in "$@"; do
         table+="'$parser',"
@@ -187,20 +176,15 @@ install_core() {
     sync_plugins
     ensure_blink_rust
 
-    if module_enabled navigation; then
-        ensure_mason ripgrep rg
-        ensure_mason fd fd
-        if ! has trash-put; then
-            warn 'trash-put is optional; Oil will use permanent deletion until trash-cli is installed'
-        fi
+    # Snacks searches, Oil's explorer, and Tree-sitter all rely on these.
+    ensure_mason ripgrep rg
+    ensure_mason fd fd
+    if ! has trash-put; then
+        warn 'trash-put is optional; Oil will use permanent deletion until trash-cli is installed'
     fi
-    if module_enabled editing; then
-        pick cc gcc clang >/dev/null || die 'a C compiler is required for Tree-sitter parsers'
-        ensure_mason tree-sitter-cli tree-sitter
-    fi
-    if module_enabled git; then
-        ensure_mason lazygit lazygit
-    fi
+    pick cc gcc clang >/dev/null || die 'a C compiler is required for Tree-sitter parsers'
+    ensure_mason tree-sitter-cli tree-sitter
+    ensure_mason lazygit lazygit
 }
 
 check_installation() {
@@ -218,33 +202,26 @@ check_installation() {
         fi
     }
 
+    local blink_library
+    blink_library=$(find "$DATA_HOME/$APP_NAME/lazy/blink.cmp/target/release" \
+        -maxdepth 1 -type f -name 'libblink_cmp_fuzzy.*' -print -quit 2>/dev/null || true)
+
     check_command Neovim "$NVIM"
     check_command Git git
-    if module_enabled coding; then
-        local blink_library
-        blink_library=$(find "$DATA_HOME/$APP_NAME/lazy/blink.cmp/target/release" \
-            -maxdepth 1 -type f -name 'libblink_cmp_fuzzy.*' -print -quit 2>/dev/null || true)
-        if [[ -n $blink_library ]]; then
-            printf '  ✓ %-22s %s\n' 'Blink Rust matcher' "$blink_library"
-        else
-            printf '  ✗ Blink Rust matcher\n'
-            failed=1
-        fi
-    fi
-    if module_enabled navigation; then
-        check_command ripgrep rg
-        check_command fd fd
-        check_command trash-put trash-put 0
-    fi
-    if module_enabled editing; then
-        check_command tree-sitter tree-sitter
-        pick cc gcc clang >/dev/null || {
-            printf '  ✗ C compiler\n'
-            failed=1
-        }
-    fi
-    if module_enabled git; then
-        check_command Lazygit lazygit
+    check_command ripgrep rg
+    check_command fd fd
+    check_command tree-sitter tree-sitter
+    check_command Lazygit lazygit
+    check_command trash-put trash-put 0
+    pick cc gcc clang >/dev/null || {
+        printf '  ✗ C compiler\n'
+        failed=1
+    }
+    if [[ -n $blink_library ]]; then
+        printf '  ✓ %-22s %s\n' 'Blink Rust matcher' "$blink_library"
+    else
+        printf '  ✗ Blink Rust matcher\n'
+        failed=1
     fi
     return "$failed"
 }

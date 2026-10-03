@@ -1,58 +1,19 @@
+--[[
+`:ConfigHealth` (and `:checkhealth config`).
+
+Nothing here lists a tool name. Everything is derived from `config/langs.lua`
+and the `command` field in `config/lsp.lua`, so a tool can never be checked in
+one place and forgotten in another.
+
+Checks are reported in three severities:
+
+  ok      present
+  warn    optional and missing -- the editor still works
+  error   required by an enabled feature and missing
+]]
 local M = {}
 
-local modules = require('modules')
-local languages = require('config.languages')
-
-local coding_tools = {
-    python = {
-        { 'basedpyright-langserver', true },
-        { 'flake8', true },
-        { 'autopep8', true },
-        { 'docformatter', true },
-    },
-    c = {
-        { 'clangd', true },
-        { 'c_formatter_42', true },
-    },
-    cpp = {
-        { 'clangd', true },
-        { 'c_formatter_42', true },
-    },
-    go = {
-        { 'gopls', true },
-        { 'gofumpt', true },
-        { 'goimports', true },
-    },
-    rust = {
-        { 'rust-analyzer', true },
-        { 'rustfmt', true },
-    },
-    lua = {
-        { 'lua-language-server', true },
-        { 'stylua', true },
-    },
-    shell = {
-        { 'bash-language-server', true },
-        { 'shfmt', true },
-    },
-    yaml = {
-        { 'yaml-language-server', true },
-        { 'prettier', true },
-    },
-    markdown = {
-        { 'marksman', true },
-        { 'prettier', true },
-    },
-    web = {
-        { 'typescript-language-server', true },
-        { 'vscode-eslint-language-server', true },
-        { 'vscode-html-language-server', true },
-        { 'vscode-css-language-server', true },
-        { 'vscode-json-language-server', true },
-        { 'prettier', true },
-    },
-}
-
+---Report one executable. `required = false` downgrades a miss to a warning.
 local function command(name, required)
     if vim.fn.executable(name) == 1 then
         vim.health.ok(('%s: %s'):format(name, vim.fn.exepath(name)))
@@ -63,6 +24,7 @@ local function command(name, required)
     end
 end
 
+---Report the first available of several interchangeable executables.
 local function one_of(label, names, required)
     for _, name in ipairs(names) do
         if vim.fn.executable(name) == 1 then
@@ -70,7 +32,7 @@ local function one_of(label, names, required)
             return
         end
     end
-    local message = label .. ' is missing; expected one of: ' .. table.concat(names, ', ')
+    local message = ('%s is missing; expected one of: %s'):format(label, table.concat(names, ', '))
     if required then
         vim.health.error(message)
     else
@@ -78,8 +40,85 @@ local function one_of(label, names, required)
     end
 end
 
+---Tools every session needs, whatever you are editing.
+local function core_checks()
+    command('git', true)
+    one_of('clipboard provider', { 'wl-copy', 'xclip', 'xsel', 'pbcopy', 'win32yank' }, false)
+
+    -- Snacks' pickers, Oil, and every `rg` search depend on these two.
+    command('rg', true)
+    command('fd', true)
+    -- Optional: without it Oil deletes permanently instead of to the trash.
+    command('trash-put', false)
+
+    -- Tree-sitter compiles parsers at install time and needs a C compiler.
+    one_of('C compiler', { 'cc', 'gcc', 'clang' }, true)
+    command('tree-sitter', true)
+
+    command('lazygit', true)
+    one_of('AI provider for 99', { 'opencode', 'claude', 'cursor-agent', 'gemini' }, true)
+end
+
+---Checks implied by the enabled languages.
+local function language_checks()
+    local langs = require('config.langs')
+    local lsp = require('config.lsp')
+
+    if langs.is_enabled('python') then
+        one_of('Python runtime', { 'python', 'python3' }, true)
+    end
+
+    local reported = {}
+    local function once(name, required)
+        if not reported[name] then
+            reported[name] = true
+            command(name, required)
+        end
+    end
+
+    langs.each(function(profile, name)
+        -- Language servers
+        local server = lsp.servers[profile.lsp]
+        if server then
+            once(server.command, true)
+        end
+
+        -- Formatters and linters
+        for _, name in ipairs(profile.formatters or {}) do
+            once(name, true)
+        end
+        for _, name in ipairs(profile.linters or {}) do
+            once(name, true)
+        end
+
+        -- Debugger
+        local debugger = profile.debugger
+        if debugger then
+            local fallback = debugger.fallback
+            if fallback then
+                one_of(debugger.name .. ' (' .. name .. ')', { debugger.command, fallback }, true)
+            else
+                once(debugger.command, false)
+            end
+        end
+
+        -- 42-school checks: mandatory for the 42 projects, noise elsewhere.
+        if profile.norm then
+            once('norminette', true)
+            once('c_formatter_42', true)
+        end
+
+        -- REPL interfaces, richest first. Missing ones are only worth a warning.
+        for _, repl in ipairs(profile.repl or {}) do
+            if repl ~= 'python' and repl ~= 'python3' then
+                once(repl, false)
+            end
+        end
+    end)
+end
+
 function M.check()
-    vim.health.start('enough-nvim')
+    vim.health.start('nvim')
 
     if vim.fn.has('nvim-0.12') == 1 then
         vim.health.ok('Neovim 0.12 or newer')
@@ -87,103 +126,17 @@ function M.check()
         vim.health.error('Neovim 0.12 or newer is required')
     end
 
-    vim.health.info('Enabled modules:')
-    for _, name in ipairs({
-        'ui',
-        'editing',
-        'navigation',
-        'coding',
-        'ai',
-        'terminal',
-        'repl',
-        'debug',
-        'git',
-        'project',
-        'school42',
-    }) do
-        vim.health.info(('  %s: %s'):format(name, modules[name] and 'on' or 'off'))
-    end
-
+    local langs = require('config.langs')
     vim.health.info('Enabled languages:')
-    for name, profile in pairs(languages) do
-        if type(profile) == 'table' then
-            vim.health.info(('  %s: %s'):format(name, profile.enabled and 'on' or 'off'))
-        end
+    for name in pairs(langs.profiles) do
+        vim.health.info(('  %s: %s'):format(name, langs.is_enabled(name) and 'on' or 'off'))
     end
 
-    command('git', true)
-    one_of('clipboard provider', { 'wl-copy', 'xclip', 'xsel', 'pbcopy', 'win32yank' }, false)
-    if modules.navigation then
-        command('rg', true)
-        command('fd', true)
-        command('trash-put', false)
-    end
-    if modules.git then
-        command('lazygit', true)
-    end
-    if modules.ai then
-        one_of('99 AI provider', { 'opencode', 'claude', 'cursor-agent', 'gemini' }, true)
-    end
-    if modules.editing then
-        command('tree-sitter', true)
-        one_of('C compiler', { 'cc', 'gcc', 'clang' }, true)
-    end
+    local lsp = require('config.lsp').enabled_servers()
+    vim.health.info(('Language servers running: %s'):format(#lsp > 0 and table.concat(lsp, ', ') or 'none'))
 
-    if languages.python.enabled then
-        one_of('Python runtime', { 'python', 'python3' }, true)
-    end
-    if languages.go.enabled then
-        command('go', true)
-    end
-    if languages.rust.enabled then
-        command('rustc', true)
-        command('cargo', true)
-    end
-    if languages.shell.enabled or languages.yaml.enabled or languages.markdown.enabled or languages.web.enabled then
-        command('node', true)
-    end
-
-    if modules.coding then
-        local checked = {}
-        for name, profile in pairs(languages) do
-            if type(profile) == 'table' and profile.enabled then
-                for _, tool in ipairs(coding_tools[name] or {}) do
-                    if not checked[tool[1]] then
-                        command(tool[1], tool[2])
-                        checked[tool[1]] = true
-                    end
-                end
-            end
-        end
-    end
-
-    if modules.repl and languages.python.enabled and type(languages.python.repl) == 'table' then
-        for _, repl in ipairs(languages.python.repl) do
-            if repl ~= 'python' and repl ~= 'python3' then
-                command(repl, false)
-            end
-        end
-    end
-
-    if modules.debug then
-        if languages.python.enabled and languages.python.debugger == 'debugpy' then
-            command('debugpy-adapter', false)
-        end
-        local native_debugger = (languages.c.enabled and languages.c.debugger == 'codelldb')
-            or (languages.cpp.enabled and languages.cpp.debugger == 'codelldb')
-            or (languages.rust.enabled and languages.rust.debugger == 'codelldb')
-        if native_debugger then
-            one_of('native debugger', { 'codelldb', 'lldb-dap' }, true)
-        end
-        if languages.go.enabled and languages.go.debugger == 'delve' then
-            command('dlv', true)
-        end
-    end
-
-    if modules.school42 and (languages.c.enabled or languages.cpp.enabled) then
-        command('norminette', true)
-        command('c_formatter_42', true)
-    end
+    core_checks()
+    language_checks()
 end
 
 return M
