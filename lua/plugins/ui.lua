@@ -258,7 +258,7 @@ local specs = {
 for _, theme in ipairs({
     'ellisonleao/gruvbox.nvim',
     'sainnhe/gruvbox-material',
-    'thallada/farout.nvim',
+    'harunnoir/farout.nvim',
     'neanias/everforest-nvim',
     'rebelot/kanagawa.nvim',
     'xero/miasma.nvim',
