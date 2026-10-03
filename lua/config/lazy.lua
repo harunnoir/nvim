@@ -41,7 +41,7 @@ function M.setup()
         -- list: no feature switches, no second list to keep in step. Add a file
         -- there, and its plugins are installed.
         spec = { { import = 'plugins' } },
-        install = { colorscheme = { 'darkearth' } },
+        install = { colorscheme = { 'farout' } },
 
         -- Plugins are pinned by whatever their own upstream release recommends.
         -- A spec that wants a specific version says so with `version`; nothing

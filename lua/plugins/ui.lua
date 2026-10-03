@@ -78,11 +78,11 @@ local specs = {
     -- `config` at all. Everything else in this file's theme list is a
     -- candidate for `<leader>cu`.
     {
-        'ptdewey/darkearth-nvim',
+        'harunnoir/farout.nvim',
         lazy = false,
         priority = 1000,
         config = function()
-            vim.cmd.colorscheme('darkearth')
+            vim.cmd.colorscheme('farout')
         end,
     },
 
