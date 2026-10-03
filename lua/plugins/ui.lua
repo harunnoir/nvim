@@ -269,6 +269,7 @@ for _, theme in ipairs({
     'rebelot/kanagawa.nvim',
     'xero/miasma.nvim',
     'maxmx03/solarized.nvim',
+    'harunnoir/limei.nvim',
 }) do
     specs[#specs + 1] = { theme, lazy = false }
 end
