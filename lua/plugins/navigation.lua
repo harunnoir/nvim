@@ -85,28 +85,21 @@ return {
     -- =====================================================================
     -- Tmux navigation
     -- =====================================================================
-    -- Seamless navigation between Neovim splits and tmux panes with Ctrl-h/j/k/l.
-    -- Loads on VeryLazy since it's a quality-of-life feature, not startup-critical.
+    -- Pure-Lua Neovim-native tmux navigation. Smaller, faster, and configurable
+    -- without VimScript globals. Ctrl-h/j/k/l moves between splits and tmux panes.
     {
-        'christoomey/vim-tmux-navigator',
+        'alexghergh/nvim-tmux-navigation',
         event = 'VeryLazy',
-        cmd = {
-            'TmuxNavigateLeft',
-            'TmuxNavigateDown',
-            'TmuxNavigateUp',
-            'TmuxNavigateRight',
-            'TmuxNavigatePrevious',
-        },
-        init = function()
-            vim.g.tmux_navigator_no_mappings = 1
-            vim.g.tmux_navigator_preserve_zoom = 1
-        end,
-        keys = {
-            { '<C-h>', '<cmd>TmuxNavigateLeft<cr>', desc = 'Navigate left' },
-            { '<C-j>', '<cmd>TmuxNavigateDown<cr>', desc = 'Navigate down' },
-            { '<C-k>', '<cmd>TmuxNavigateUp<cr>', desc = 'Navigate up' },
-            { '<C-l>', '<cmd>TmuxNavigateRight<cr>', desc = 'Navigate right' },
-            { '<C-\\>', '<cmd>TmuxNavigatePrevious<cr>', desc = 'Navigate previous' },
+        opts = {
+            disable_when_zoomed = true, -- don't navigate when tmux pane is zoomed
+            keybindings = {
+                left = '<C-h>',
+                down = '<C-j>',
+                up = '<C-k>',
+                right = '<C-l>',
+                last_active = '<C-\\>',
+                next = '<C-Space>',
+            },
         },
     },
 }
