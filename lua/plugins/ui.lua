@@ -215,12 +215,6 @@ local specs = {
                     input = { icon = '?' },
                 },
                 view = 'cmdline_popup',
-                opts = {
-                    border = 'none',
-                    win_options = {
-                        winhighlight = { Normal = 'NormalFloat', FloatBorder = 'FloatBorder' },
-                    },
-                },
             },
 
             views = {
